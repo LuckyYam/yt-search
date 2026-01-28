@@ -1,10 +1,24 @@
 const _cheerio = require( 'cheerio' )
 const _dasu = require( 'dasu' )
 const _parallel = require( 'async.parallellimit' )
+const fs = require('fs')
+const https = require('https')
 
 // auto follow off
 _dasu.follow = true
 _dasu.debug = false
+_dasu.httpsAgent = new https.Agent({
+  ca: process.platform === 'linux' && fs.existsSync('/etc/ssl/certs/ca-certificates.crt') ? fs.readFileSync('/etc/ssl/certs/ca-certificates.crt') : undefined,
+  keepAlive: true
+})
+
+const _dasuReq = _dasu.req
+
+_dasu.req = function(params, callback) {
+  if (_dasu.httpsAgent && (params.protocol === 'https:' || !params.protocol))
+      params.agent = _dasu.httpsAgent
+    return _dasuReq(params, callback)
+}
 
 const { _getScripts, _findLine, _between } = require( './util.js' )
 
